@@ -1,0 +1,15 @@
+.series0-line {
+  stroke: red;
+}
+.series1-line {
+  stroke: green;
+}
+
+.series0-point {
+  fill: darkred;
+  stroke: red;
+}
+.series1-point {
+  fill: darkgreen;
+  stroke: green;
+}
