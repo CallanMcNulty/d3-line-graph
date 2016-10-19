@@ -23,7 +23,7 @@ $(document).ready(function(){
   var findMaxMin = function(points, isMax, isX) {
     var soFar = isMax ? -Infinity : Infinity;
     for(var i=0; i<points.length; i++) {
-      var val = isX ? points[i][0] : points[i][1];
+      var val = isX ? Date.parse(points[i][0]) : points[i][1];
       if(isMax ? val > soFar : val < soFar) {
         soFar = val;
       }
@@ -86,8 +86,12 @@ $(document).ready(function(){
     var xScale = d3.scaleLinear()
       .domain([minX, maxX])
       .range([padding, w-paddingLarge])
-    var xAxis = d3.axisBottom(xScale);
-
+    debugger;
+    var xTimeScale = d3.scaleTime()
+                        .domain([minX, maxX])
+                        .range([padding, w-paddingLarge])
+    var xTimeAxis = d3.axisBottom(xTimeScale);
+    var xAxis = d3.axisBottom(xTimeScale);
     // var verticalGuide = svg.append("g")
     //   .attr("class", "axis")
     //   .attr("transform", "translate("+padding+",0)")
@@ -142,9 +146,9 @@ $(document).ready(function(){
       trendLine.selectAll("line")
           .data(lineData)
         .enter().append("line")
-          .attr("x1", function(d){return xScale(d.p1[0])})
+          .attr("x1", function(d){return xTimeScale(Date.parse(d.p1[0]))})
           .attr("y1", function(d){return yScale(d.p1[1])})
-          .attr("x2", function(d){return xScale(d.p2[0]) })
+          .attr("x2", function(d){return xTimeScale(Date.parse(d.p2[0]) )})
           .attr("y2", function(d){return yScale(d.p2[1])})
           .style("stroke-width", 1)
           .attr("class", "series"+i+"-line");
@@ -154,13 +158,13 @@ $(document).ready(function(){
         .enter().append("rect")
           .attr("width", 4)
           .attr("height", 4)
-          .attr("x", function(d) {return xScale(d[0])-2})
+          .attr("x", function(d) {return xTimeScale(Date.parse(d[0]))-2})
           .attr("y", function(d) {return yScale(d[1])-2})
           .attr("class", "series"+i+"-point")
           .on("mouseover", function(d) {
             d3.select(this.parentNode)
               .append("text")
-                .attr("x", xScale(d[0])-2)
+                .attr("x", xTimeScale(Date.parse(d[0]))-2)
                 .attr("y", yScale(d[1])-10)
                 .text(d[2]+" "+d3.select(this.parentNode).attr("unit"))
           })
@@ -174,8 +178,8 @@ $(document).ready(function(){
 
 
 
-
-  var data = [ {name:"test-data-0", unit:"a", refMin:0, refMax:20, values:[[1,23],[2,30],[5,15],[8,15],[10,20],[11,23]]}, {name:"test-data-1", unit:"b", refMin:20, refMax:40, values:[[3,20],[9,12],[12,27]]} ];
+  debugger;
+  var data = [ {name:"test-data-0", unit:"a", refMin:0, refMax:20, values:[["10/11/16",23],["10/12/16",30],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]}, {name:"test-data-1", unit:"b", refMin:20, refMax:40, values:[["10/13/16",20],["10/14/16",12],["10/15/16",27]]} ];
   //var transformedData = transformData(data);
   var svg = body.append("svg")
     .style("width", "800px")
