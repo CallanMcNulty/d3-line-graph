@@ -37,42 +37,42 @@
   stroke: green;
 }
 
-.series3-line {
+.series2-line {
   stroke: yellow;
 }
-.series3-point {
+.series2-point {
   fill: #cc3;
   stroke: yellow;
 }
 
-.series4-line {
+.series3-line {
   stroke: blue;
 }
-.series4-point {
+.series3-point {
   fill: darkblue;
   stroke: blue;
 }
 
-.series5-line {
+.series4-line {
   stroke: magenta;
 }
-.series5-point {
+.series4-point {
   fill: darkmagenta;
   stroke: magenta;
 }
 
-.series6-line {
+.series5-line {
   stroke: orange;
 }
-.series6-point {
+.series5-point {
   fill: darkorange;
   stroke: orange;
 }
 
-.series7-line {
+.series6-line {
   stroke: gray;
 }
-.series7-point {
+.series6-point {
   fill: #333;
   stroke: gray;
 }
