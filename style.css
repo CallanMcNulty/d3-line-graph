@@ -1,15 +1,78 @@
+.out-of-range {
+  fill: #ddd;
+  stroke: black;
+}
+.in-range {
+  fill: #aaf;
+}
+
+.value-tooltip {
+  fill: #448;
+}
+.value-tooltip text {
+  fill: white;
+}
+
+.series-line {
+  stroke-width: 3;
+}
+.series-point {
+  stroke-width: 1.5;
+}
+
+
 .series0-line {
   stroke: red;
 }
-.series1-line {
-  stroke: green;
-}
-
 .series0-point {
   fill: darkred;
   stroke: red;
 }
-.series1-point {
-  fill: darkgreen;
+
+.series1-line {
   stroke: green;
+}
+.series1-point {
+  fill: #002800;
+  stroke: green;
+}
+
+.series3-line {
+  stroke: yellow;
+}
+.series3-point {
+  fill: #cc3;
+  stroke: yellow;
+}
+
+.series4-line {
+  stroke: blue;
+}
+.series4-point {
+  fill: darkblue;
+  stroke: blue;
+}
+
+.series5-line {
+  stroke: magenta;
+}
+.series5-point {
+  fill: darkmagenta;
+  stroke: magenta;
+}
+
+.series6-line {
+  stroke: orange;
+}
+.series6-point {
+  fill: darkorange;
+  stroke: orange;
+}
+
+.series7-line {
+  stroke: gray;
+}
+.series7-point {
+  fill: #333;
+  stroke: gray;
 }

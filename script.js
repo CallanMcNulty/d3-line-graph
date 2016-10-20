@@ -1,40 +1,30 @@
 $(document).ready(function(){
-  var body = d3.select("body");
-  // var div = body.append("div");
-  // var data = [8,4,3,7,1];
-
-
-  // div.selectAll("div")
-  //     .data(data)
-  //   .enter().append("div")
-  //     .style("width", function(d) { return d * 10 + "px"; })
-  //     .style("background-color", "red")
-  //     .style("margin-bottom", "5px")
-  //     .text(function(d) { return d; });
 
   var linify = function(points) {
-    var lines = []
+    points.sort(function(a, b) {
+      if(a[0] < b[0]) {
+        return -1;
+      }
+      if(b[0] < a[0]) {
+        return 1;
+      }
+      return 0;
+    });
+    var lines = [];
     for(var i=0; i<points.length-1; i++) {
       lines.push({p1:points[i],p2:points[i+1]});
     }
     return lines;
   }
 
-  var findMaxMin = function(points, isMax, isX) {
-    var soFar = isMax ? -Infinity : Infinity;
-    for(var i=0; i<points.length; i++) {
-      var val = isX ? Date.parse(points[i][0]) : points[i][1];
-      if(isMax ? val > soFar : val < soFar) {
-        soFar = val;
-      }
-    }
-    return soFar;
-  }
-
-  var multiSetMaxMin = function(data, isMax, isX) {
+  var findMaxMin = function(data, isMax, isX) {
     var soFar = isMax ? -Infinity : Infinity;
     for(var i=0; i<data.length; i++) {
-      var val = findMaxMin(data[i], isMax, isX);
+      if(typeof data[i][0] === "object") {
+        var val = findMaxMin(data[i], isMax, isX);
+      } else {
+        var val = isX ? data[i][0] : data[i][1];
+      }
       if(isMax ? val > soFar : val < soFar) {
         soFar = val;
       }
@@ -52,7 +42,7 @@ $(document).ready(function(){
       for(var j=0; j<dataset.values.length; j++) {
         var transformedPoint = [];
         var point = dataset.values[j];
-        transformedPoint[0] = point[0];
+        transformedPoint[0] = Date.parse(point[0]);
         transformedPoint[1] = point[1]*ratio + offset;
         transformedPoint[2] = point[1];
         transformedData[i].push(transformedPoint);
@@ -67,35 +57,31 @@ $(document).ready(function(){
       metaData.push({name:data[i].name, unit:data[i].unit});
     }
     data = transformData(data);
-    var padding = 25;
-    var paddingLarge = 100;
     var h = svg.style("height");
     var w = svg.style("width");
     h = parseInt(h.substring(0,h.length-2));
     w = parseInt(w.substring(0,w.length-2));
-    var minX = multiSetMaxMin(data, false, true);
-    var maxX = multiSetMaxMin(data, true, true);
-    var minY = multiSetMaxMin(data, false, false);
-    var maxY = multiSetMaxMin(data, true, false);
+    var padding = 25;
+    var paddingLarge = w/3;
+    var minX = findMaxMin(data, false, true);
+    var maxX = findMaxMin(data, true, true);
+    var xInnerPadding = (maxX - minX)/10;
+    maxX += xInnerPadding;
+    minX -= xInnerPadding;
+    var minY = Math.min(0,findMaxMin(data, false, false));
+    var maxY = Math.max(900,findMaxMin(data, true, false));
+    var yInnerPadding = (maxY - minY)/10;
+    maxY += yInnerPadding;
+    minY -= yInnerPadding;
 
     var yScale = d3.scaleLinear()
       .domain([minY, maxY])
       .range([h-padding, padding])
-    //var yAxis = d3.axisLeft(yScale);
 
-    var xScale = d3.scaleLinear()
-      .domain([minX, maxX])
-      .range([padding, w-paddingLarge])
-    debugger;
     var xTimeScale = d3.scaleTime()
                         .domain([minX, maxX])
                         .range([padding, w-paddingLarge])
-    var xTimeAxis = d3.axisBottom(xTimeScale);
     var xAxis = d3.axisBottom(xTimeScale);
-    // var verticalGuide = svg.append("g")
-    //   .attr("class", "axis")
-    //   .attr("transform", "translate("+padding+",0)")
-    // yAxis(verticalGuide);
     var horizGuide = svg.append("g")
       .attr("class", "axis")
       .attr("transform", "translate(0,"+(h-padding)+")")
@@ -104,83 +90,99 @@ $(document).ready(function(){
     var graph = svg.append("g");
 
     graph.append("rect")
-      .attr("x", xScale(minX))
+      .attr("x", xTimeScale(minX)-1)
       .attr("y", yScale(maxY))
-      .attr("width", xScale(maxX)-padding)
+      .attr("width", xTimeScale(maxX)-padding+2)
       .attr("height", yScale(minY)-yScale(maxY))
-      .style("fill", "#ffb")
+      .attr("class", "out-of-range")
 
     graph.append("rect")
-      .attr("x", xScale(minX))
+      .attr("x", xTimeScale(minX))
       .attr("y", yScale(900))
-      .attr("width", xScale(maxX)-padding)
+      .attr("width", xTimeScale(maxX)-padding)
       .attr("height", yScale(0)-yScale(900))
-      .style("fill", "#9f9")
+      .attr("class", "in-range")
 
     for(var i=0; i<data.length; i++) {
       var dataSetName = metaData[i].name;
       var dataSetUnit = metaData[i].unit;
+
       //labels
+      var legendPadding = 15;
+      var legendLineLength = 50;
+      var legendPointWidth = 6;
       graph.append("line")
-        .attr("x1", w-paddingLarge+5)
-        .attr("x2", w-5)
+        .attr("x1", w-paddingLarge+legendPadding)
+        .attr("x2", w-paddingLarge+legendPadding+legendLineLength)
         .attr("y1", 35*(i+1))
         .attr("y2", 35*(i+1))
-        .style("stroke-width", 1)
-        .attr("class", "series"+i+"-line");
+        .attr("class", "series"+Math.min(i,7)+"-line series-line");
       graph.append("text")
-        .attr("x", w-paddingLarge+5)
+        .attr("x", w-paddingLarge+legendPadding)
         .attr("y", 35*(i+1)+20)
         .text(dataSetName+" ("+dataSetUnit+")")
       graph.append("rect")
-        .attr("width", 4)
-        .attr("height", 4)
-        .attr("x", w-paddingLarge/2-2)
-        .attr("y", 35*(i+1)-2)
-        .attr("class", "series"+i+"-point")
+        .attr("width", legendPointWidth)
+        .attr("height", legendPointWidth)
+        .attr("x", w-paddingLarge+legendPadding+(legendLineLength/2)-(legendPointWidth/2))
+        .attr("y", 35*(i+1)-(legendPointWidth/2))
+        .attr("class", "series"+Math.min(i,7)+"-point series-point")
 
       //trendlines
       var lineData = linify(data[i]);
+      var pointWidth = 6;
+      var tooltipWidth = 60;
+      var tooltipHeight = 30;
+      var tooltipTailHeight = 10;
       var trendLine = graph.append("g")
         .attr("unit", dataSetUnit);
       trendLine.selectAll("line")
           .data(lineData)
         .enter().append("line")
-          .attr("x1", function(d){return xTimeScale(Date.parse(d.p1[0]))})
+          .attr("x1", function(d){return xTimeScale(d.p1[0])})
           .attr("y1", function(d){return yScale(d.p1[1])})
-          .attr("x2", function(d){return xTimeScale(Date.parse(d.p2[0]) )})
+          .attr("x2", function(d){return xTimeScale(d.p2[0])})
           .attr("y2", function(d){return yScale(d.p2[1])})
-          .style("stroke-width", 1)
-          .attr("class", "series"+i+"-line");
+          .attr("class", "series"+Math.min(i,7)+"-line series-line");
 
       trendLine.selectAll("rect")
           .data(data[i])
         .enter().append("rect")
-          .attr("width", 4)
-          .attr("height", 4)
-          .attr("x", function(d) {return xTimeScale(Date.parse(d[0]))-2})
-          .attr("y", function(d) {return yScale(d[1])-2})
-          .attr("class", "series"+i+"-point")
+          .attr("width", pointWidth)
+          .attr("height", pointWidth)
+          .attr("x", function(d) {return xTimeScale(d[0])-(pointWidth/2)})
+          .attr("y", function(d) {return yScale(d[1])-(pointWidth/2)})
+          .attr("class", "series"+Math.min(i,7)+"-point series-point")
           .on("mouseover", function(d) {
-            d3.select(this.parentNode)
-              .append("text")
-                .attr("x", xTimeScale(Date.parse(d[0]))-2)
-                .attr("y", yScale(d[1])-10)
-                .text(d[2]+" "+d3.select(this.parentNode).attr("unit"))
+            var tooltip = d3.select(this.parentNode)
+              .append("g")
+                .attr("class", "value-tooltip");
+            tooltip.append("rect")
+              .attr("x", xTimeScale(d[0])-(tooltipWidth/2))
+              .attr("y", yScale(d[1])-(tooltipHeight+tooltipTailHeight))
+              .attr("width", tooltipWidth)
+              .attr("height", tooltipHeight)
+              .attr("rx", tooltipHeight/4)
+              .attr("ry", tooltipHeight/4);
+            console.log();
+            tooltip.append("polygon")
+              .attr("points", xTimeScale(d[0])+","+(yScale(d[1])-(pointWidth/2))+" "+(xTimeScale(d[0])-5)+","+(yScale(d[1])-tooltipTailHeight-1)+" "+(xTimeScale(d[0])+5)+","+(yScale(d[1])-tooltipTailHeight-1))
+            tooltip.append("text")
+              .attr("x", xTimeScale(d[0])-(tooltipWidth/2))
+              .attr("y", yScale(d[1])-(tooltipHeight+tooltipTailHeight)/2)
+              .text(d[2]+" "+d3.select(this.parentNode).attr("unit"));
           })
           .on("mouseout", function(d) {
             d3.select(this.parentNode)
-              .selectAll("text")
+              .selectAll("g")
               .remove();
           });
     }
   }
 
-
-
-  debugger;
-  var data = [ {name:"test-data-0", unit:"a", refMin:0, refMax:20, values:[["10/11/16",23],["10/12/16",30],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]}, {name:"test-data-1", unit:"b", refMin:20, refMax:40, values:[["10/13/16",20],["10/14/16",12],["10/15/16",27]]} ];
-  //var transformedData = transformData(data);
+  // var data = [ {name:"in-range-data", unit:"a", refMin:0, refMax:100, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15]]}];
+  var data = [ {name:"test-data-0", unit:"a", refMin:0, refMax:20, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]}, {name:"test-data-1", unit:"b", refMin:20, refMax:40, values:[["10/13/16",20],["10/14/16",12],["10/15/16",27]]} ];
+  var body = d3.select("body");
   var svg = body.append("svg")
     .style("width", "800px")
     .style("height", "400px")
