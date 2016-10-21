@@ -53,7 +53,7 @@ $(document).ready(function(){
   var lineGraph = function(svg, data) {
     var metaData = [];
     for(var i=0; i<data.length; i++) {
-      metaData.push({name:data[i].name, unit:data[i].unit});
+      metaData.push({name:data[i].name, unit:data[i].unit, refMin:data[i].refMin, refMax:data[i].refMax});
     }
     data = transformData(data);
     var h = svg.style("height");
@@ -61,7 +61,7 @@ $(document).ready(function(){
     h = parseFloat(h);
     w = parseFloat(w);
     var padding = 25;
-    var paddingLarge = 80;//w/3;
+    var paddingLarge = 85;
     var minX = findMaxMin(data, false, true);
     var maxX = findMaxMin(data, true, true);
     var xInnerPadding = (maxX - minX)/10;
@@ -82,7 +82,6 @@ $(document).ready(function(){
                         .range([padding, w-padding])
     var numberOfDays = (maxX - minX) / 86400000 + 1;
     var xAxis = d3.axisBottom(xTimeScale)
-      //.ticks(6)
       .tickFormat(d3.timeFormat("%m-%d-%y"));
     var horizGuide = svg.append("g")
       .attr("class", "axis")
@@ -115,7 +114,7 @@ $(document).ready(function(){
       .attr("x", padding)
       .attr("y", h-paddingLarge+padding)
       .attr("width", w-2*padding)
-      .attr("height", 40)
+      .attr("height", 50)
       .style("fill", "#ddd")
       .style("stroke", "black")
 
@@ -123,28 +122,26 @@ $(document).ready(function(){
     for(var i=0; i<data.length; i++) {
       var dataSetName = metaData[i].name;
       var dataSetUnit = metaData[i].unit;
-
+      var datasetMin = metaData[i].refMin;
+      var datasetMax = metaData[i].refMax;
       //legend
       var labelText = legend.append("text")
         .attr("x", labelX)
         .attr("y", h-padding)
         .text(dataSetName+" ("+dataSetUnit+")");
       var textWidth = parseFloat(labelText.style("width"));
-      // if(textWidth > paddingLarge-padding-legendPadding) {
-      //   labelText.attr("textLength", paddingLarge-padding-legendPadding)
-      // }
       legend.append("line")
         .attr("x1", labelX)
         .attr("x2", labelX + textWidth)
         .attr("y1", h-paddingLarge+padding+padding/2)
         .attr("y2", h-paddingLarge+padding+padding/2)
-        .attr("class", "series"+Math.min(i,7)+"-line series-line");
+        .attr("class", "series"+Math.min(i,6)+"-line series-line");
       legend.append("rect")
         .attr("width", legendPointWidth)
         .attr("height", legendPointWidth)
         .attr("x", labelX + textWidth/2 - legendPointWidth/2)
         .attr("y", h-paddingLarge+padding+padding/2-(legendPointWidth/2))
-        .attr("class", "series"+Math.min(i,7)+"-point series-point")
+        .attr("class", "series"+Math.min(i,6)+"-point series-point")
       labelX = labelX + textWidth + legendPadding;
 
       //trendlines
@@ -156,6 +153,8 @@ $(document).ready(function(){
       var tooltipPadding = 6;
       var trendLine = graph.append("g")
         .attr("unit", dataSetUnit)
+        .attr("refMin", datasetMin)
+        .attr("refMax", datasetMax)
       trendLine.selectAll("line")
           .data(lineData)
         .enter().append("line")
@@ -163,7 +162,7 @@ $(document).ready(function(){
           .attr("y1", function(d){return yScale(d.p1[1])})
           .attr("x2", function(d){return xTimeScale(d.p2[0])})
           .attr("y2", function(d){return yScale(d.p2[1])})
-          .attr("class", "series"+Math.min(i,7)+"-line series-line");
+          .attr("class", "series"+Math.min(i,6)+"-line series-line");
 
       trendLine.selectAll("rect")
           .data(data[i])
@@ -172,9 +171,15 @@ $(document).ready(function(){
           .attr("height", pointWidth)
           .attr("x", function(d) {return xTimeScale(d[0])-(pointWidth/2)})
           .attr("y", function(d) {return yScale(d[1])-(pointWidth/2)})
-          .attr("class", "series"+Math.min(i,7)+"-point series-point")
+          .attr("class", "series"+Math.min(i,6)+"-point series-point")
           .on("mouseover", function(d) {
             var tooltip = d3.select(this.parentNode.parentNode)
+              .append("g")
+                .attr("class", "value-tooltip tooltip-unlocked");
+            var minTip = d3.select(this.parentNode.parentNode)
+              .append("g")
+                .attr("class", "value-tooltip tooltip-unlocked");
+            var maxTip = d3.select(this.parentNode.parentNode)
               .append("g")
                 .attr("class", "value-tooltip tooltip-unlocked");
             tooltip.append("rect")
@@ -184,21 +189,52 @@ $(document).ready(function(){
               .attr("height", tooltipHeight)
               .attr("rx", tooltipHeight/4)
               .attr("ry", tooltipHeight/4);
+            minTip.append("rect")
+              .attr("x", 0)
+              .attr("y", yScale(0)-tooltipHeight/2)
+              .attr("width", tooltipWidth)
+              .attr("height", tooltipHeight)
+              .attr("rx", tooltipHeight/4)
+              .attr("ry", tooltipHeight/4);
+            maxTip.append("rect")
+              .attr("x", 0)
+              .attr("y", yScale(900)-tooltipHeight/2)
+              .attr("width", tooltipWidth)
+              .attr("height", tooltipHeight)
+              .attr("rx", tooltipHeight/4)
+              .attr("ry", tooltipHeight/4);
             tooltip.append("polygon")
               .attr("points", xTimeScale(d[0])+","+(yScale(d[1])-(pointWidth/2))+" "+(xTimeScale(d[0])-5)+","+(yScale(d[1])-tooltipTailHeight-1)+" "+(xTimeScale(d[0])+5)+","+(yScale(d[1])-tooltipTailHeight-1))
-            var tooltipLabel = tooltip.append("text")
+            tooltip.append("text")
               .attr("x", xTimeScale(d[0])-(tooltipWidth/2)+tooltipPadding)
               .attr("y", yScale(d[1])-(tooltipHeight+tooltipTailHeight)/2)
               .text(d[2]+" "+d3.select(this.parentNode).attr("unit"));
-            var tooltipLabelWidth = parseFloat(tooltipLabel.style("width"));
-            var rec = tooltip.select("rect")
-              .attr("width", Math.max(tooltipLabelWidth+(2*tooltipPadding), tooltipWidth/2+2*tooltipPadding) );
-            var tooltipX = parseFloat(rec.attr("x"));
-            if(tooltipX+tooltipLabelWidth+tooltipPadding*2 > w ) {
-              var overflow = (tooltipX+tooltipLabelWidth+tooltipPadding*2) - w;
-              rec.attr("x", tooltipX-overflow)
-              tooltipLabel.attr("x", tooltipX-overflow+tooltipPadding)
-            }
+            minTip.append("text")
+              .attr("x", tooltipPadding)
+              .attr("y", yScale(0)+tooltipPadding)
+              .text(d3.select(this.parentNode).attr("refMin")+" "+d3.select(this.parentNode).attr("unit"));
+            maxTip.append("text")
+              .attr("x", tooltipPadding)
+              .attr("y", yScale(900)+tooltipPadding)
+              .text(d3.select(this.parentNode).attr("refMax")+" "+d3.select(this.parentNode).attr("unit"));
+            d3.selectAll(".value-tooltip").each(function(){
+              var tt = d3.select(this);
+              var tooltipLabel = tt.select("text");
+              var tooltipLabelWidth = parseFloat(tooltipLabel.style("width"));
+              var rec = tt.select("rect")
+                .attr("width", Math.max(tooltipLabelWidth+(2*tooltipPadding), tooltipWidth/2+2*tooltipPadding) );
+              var tooltipX = parseFloat(rec.attr("x"));
+              if(tooltipX+tooltipLabelWidth+tooltipPadding*2 > w ) {
+                var overflow = (tooltipX+tooltipLabelWidth+tooltipPadding*2) - w;
+                rec.attr("x", tooltipX-overflow);
+                tooltipLabel.attr("x", tooltipX-overflow+tooltipPadding);
+              }
+              var tooltipY = parseFloat(rec.attr("y"));
+              if(tooltipY < 0) {
+                rec.attr("y", 0);
+                tooltipLabel.attr("y", tooltipLabel.attr("y")-tooltipY);
+              }
+            });
           })
           .on("mouseout", function() {
             if(!d3.select(this).attr("class").includes("tooltip-locked")) {
@@ -230,7 +266,8 @@ $(document).ready(function(){
         var selectX = parseFloat(select.attr("x"));
         var selectLength = parseFloat(select.style("width"));
         select.attr("textLength", selectLength*legendRatio);
-        select.attr("x", selectX*legendRatio+padding*(1-legendRatio))
+        select.attr("lengthAdjust", "spacingAndGlyphs");
+        select.attr("x", selectX*legendRatio+padding*(1-legendRatio));
       });
       legend.selectAll("rect").each(function(){
         var select = d3.select(this);
