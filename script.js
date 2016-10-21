@@ -58,10 +58,10 @@ $(document).ready(function(){
     data = transformData(data);
     var h = svg.style("height");
     var w = svg.style("width");
-    h = parseInt(h.substring(0,h.length-2));
-    w = parseInt(w.substring(0,w.length-2));
+    h = parseFloat(h);
+    w = parseFloat(w);
     var padding = 25;
-    var paddingLarge = w/3;
+    var paddingLarge = 80;//w/3;
     var minX = findMaxMin(data, false, true);
     var maxX = findMaxMin(data, true, true);
     var xInnerPadding = (maxX - minX)/10;
@@ -75,18 +75,18 @@ $(document).ready(function(){
 
     var yScale = d3.scaleLinear()
       .domain([minY, maxY])
-      .range([h-padding, padding])
+      .range([h-paddingLarge, padding])
 
     var xTimeScale = d3.scaleTime()
                         .domain([minX, maxX])
-                        .range([padding, w-paddingLarge])
+                        .range([padding, w-padding])
     var numberOfDays = (maxX - minX) / 86400000 + 1;
     var xAxis = d3.axisBottom(xTimeScale)
       //.ticks(6)
       .tickFormat(d3.timeFormat("%m-%d-%y"));
     var horizGuide = svg.append("g")
       .attr("class", "axis")
-      .attr("transform", "translate(0,"+(h-padding)+")");
+      .attr("transform", "translate(0,"+(h-paddingLarge)+")");
     xAxis(horizGuide);
 
     var graph = svg.append("g");
@@ -105,42 +105,47 @@ $(document).ready(function(){
       .attr("height", yScale(0)-yScale(900))
       .attr("class", "in-range")
 
+    //legend init
+    var legendPadding = 25;
+    var legendLineLength = 50;
+    var legendPointWidth = 6;
+    var labelX = padding+legendPadding;
+    var legend = graph.append("g");
+    var legendBack = legend.append("rect")
+      .attr("x", padding)
+      .attr("y", h-paddingLarge+padding)
+      .attr("width", w-2*padding)
+      .attr("height", 40)
+      .style("fill", "#ddd")
+      .style("stroke", "black")
+
     //datasets
     for(var i=0; i<data.length; i++) {
       var dataSetName = metaData[i].name;
       var dataSetUnit = metaData[i].unit;
 
       //legend
-      var legendPadding = 25;
-      var legendLineLength = 50;
-      var legendPointWidth = 6;
-      var legend = graph.append("g");
-      legend.append("rect")
-        .attr("x", w-paddingLarge+legendPadding/2)
-        .attr("y", 35*i+padding)
-        .attr("width", paddingLarge-padding-legendPadding/2)
-        .attr("height", 40)
-        .style("fill", "#ddd")
-      legend.append("line")
-        .attr("x1", w-paddingLarge+legendPadding)
-        .attr("x2", w-paddingLarge+legendPadding+legendLineLength)
-        .attr("y1", 35*(i+1))
-        .attr("y2", 35*(i+1))
-        .attr("class", "series"+Math.min(i,7)+"-line series-line");
       var labelText = legend.append("text")
-        .attr("x", w-paddingLarge+legendPadding)
-        .attr("y", 35*(i+1)+20)
+        .attr("x", labelX)
+        .attr("y", h-padding)
         .text(dataSetName+" ("+dataSetUnit+")");
-      var textWidth = parseInt(labelText.style("width"));
-      if(textWidth > paddingLarge-padding-legendPadding) {
-        labelText.attr("textLength", paddingLarge-padding-legendPadding)
-      }
+      var textWidth = parseFloat(labelText.style("width"));
+      // if(textWidth > paddingLarge-padding-legendPadding) {
+      //   labelText.attr("textLength", paddingLarge-padding-legendPadding)
+      // }
+      legend.append("line")
+        .attr("x1", labelX)
+        .attr("x2", labelX + textWidth)
+        .attr("y1", h-paddingLarge+padding+padding/2)
+        .attr("y2", h-paddingLarge+padding+padding/2)
+        .attr("class", "series"+Math.min(i,7)+"-line series-line");
       legend.append("rect")
         .attr("width", legendPointWidth)
         .attr("height", legendPointWidth)
-        .attr("x", w-paddingLarge+legendPadding+(legendLineLength/2)-(legendPointWidth/2))
-        .attr("y", 35*(i+1)-(legendPointWidth/2))
+        .attr("x", labelX + textWidth/2 - legendPointWidth/2)
+        .attr("y", h-paddingLarge+padding+padding/2-(legendPointWidth/2))
         .attr("class", "series"+Math.min(i,7)+"-point series-point")
+      labelX = labelX + textWidth + legendPadding;
 
       //trendlines
       var lineData = linify(data[i]);
@@ -185,12 +190,12 @@ $(document).ready(function(){
               .attr("x", xTimeScale(d[0])-(tooltipWidth/2)+tooltipPadding)
               .attr("y", yScale(d[1])-(tooltipHeight+tooltipTailHeight)/2)
               .text(d[2]+" "+d3.select(this.parentNode).attr("unit"));
-            var tooltipLabelWidth = parseInt(tooltipLabel.style("width"));
+            var tooltipLabelWidth = parseFloat(tooltipLabel.style("width"));
             var rec = tooltip.select("rect")
               .attr("width", Math.max(tooltipLabelWidth+(2*tooltipPadding), tooltipWidth/2+2*tooltipPadding) );
-            var tooltipX = parseInt(rec.attr("x"));
-            if(tooltipX+tooltipLabelWidth > (2/3)*w ) {
-              var overflow = (tooltipX+tooltipLabelWidth) - (2/3)*w;
+            var tooltipX = parseFloat(rec.attr("x"));
+            if(tooltipX+tooltipLabelWidth+tooltipPadding*2 > w ) {
+              var overflow = (tooltipX+tooltipLabelWidth+tooltipPadding*2) - w;
               rec.attr("x", tooltipX-overflow)
               tooltipLabel.attr("x", tooltipX-overflow+tooltipPadding)
             }
@@ -215,31 +220,34 @@ $(document).ready(function(){
             }
           });
     }
-    //legend box outline
-    legend.append("line")
-      .attr("x1", w-paddingLarge+legendPadding/2)
-      .attr("x2", w-padding)
-      .attr("y1", padding)
-      .attr("y2", padding)
-      .style("stroke", "black")
-    legend.append("line")
-      .attr("x1", w-paddingLarge+legendPadding/2)
-      .attr("x2", w-padding)
-      .attr("y1", 35*i+padding+5)
-      .attr("y2", 35*i+padding+5)
-      .style("stroke", "black")
-    legend.append("line")
-      .attr("x1", w-paddingLarge+legendPadding/2)
-      .attr("x2", w-paddingLarge+legendPadding/2)
-      .attr("y1", padding)
-      .attr("y2", 35*i+padding+5)
-      .style("stroke", "black")
-    legend.append("line")
-      .attr("x1", w-padding)
-      .attr("x2", w-padding)
-      .attr("y1", padding)
-      .attr("y2", 35*i+padding+5)
-      .style("stroke", "black")
+    //legend finish
+    var legendWidth = labelX-legendPadding;
+    var desiredLegendWidth = w-padding*2
+    if(legendWidth > desiredLegendWidth) {
+      var legendRatio = desiredLegendWidth/legendWidth;
+      legend.selectAll("text").each(function(){
+        var select = d3.select(this);
+        var selectX = parseFloat(select.attr("x"));
+        var selectLength = parseFloat(select.style("width"));
+        select.attr("textLength", selectLength*legendRatio);
+        select.attr("x", selectX*legendRatio+padding*(1-legendRatio))
+      });
+      legend.selectAll("rect").each(function(){
+        var select = d3.select(this);
+        var selectX = parseFloat(select.attr("x"));
+        select.attr("x", selectX*legendRatio+padding*(1-legendRatio))
+      });
+      legend.selectAll("line").each(function(){
+        var select = d3.select(this);
+        var selectX1 = parseFloat(select.attr("x1"));
+        var selectX2 = parseFloat(select.attr("x2"));
+        select.attr("x1", (selectX1)*legendRatio+padding*(1-legendRatio));
+        select.attr("x2", (selectX1+(selectX2-selectX1))*legendRatio+padding*(1-legendRatio));
+      });
+      legendBack.attr("width", desiredLegendWidth);
+    } else {
+      legendBack.attr("width", legendWidth);
+    }
   }
 
   // var data = [ {name:"in-range-data", unit:"a", refMin:0, refMax:100, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15]]}];
@@ -253,7 +261,11 @@ $(document).ready(function(){
             ];
   var body = d3.select("body");
   var svg = body.append("svg")
-    .style("width", "800px")
-    .style("height", "300px")
+    .style("width", "100%")
+    .style("height", "80%")
   lineGraph(svg, data);
+  $(window).resize(function(){
+    svg.selectAll("*").remove();
+    lineGraph(svg, data);
+  });
 });
