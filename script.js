@@ -171,7 +171,7 @@ $(document).ready(function(){
           .on("mouseover", function(d) {
             var tooltip = d3.select(this.parentNode.parentNode)
               .append("g")
-                .attr("class", "value-tooltip");
+                .attr("class", "value-tooltip tooltip-unlocked");
             tooltip.append("rect")
               .attr("x", xTimeScale(d[0])-(tooltipWidth/2))
               .attr("y", yScale(d[1])-(tooltipHeight+tooltipTailHeight))
@@ -195,10 +195,24 @@ $(document).ready(function(){
               tooltipLabel.attr("x", tooltipX-overflow+tooltipPadding)
             }
           })
-          .on("mouseout", function(d) {
-            d3.select(this.parentNode.parentNode)
-              .selectAll(".value-tooltip")
-              .remove();
+          .on("mouseout", function() {
+            if(!d3.select(this).attr("class").includes("tooltip-locked")) {
+              var tts = d3.select(this.parentNode.parentNode)
+                .selectAll(".tooltip-unlocked")
+                .remove();
+            }
+          })
+          .on("click", function(d){
+            var pts = xTimeScale(d[0])+","+(yScale(d[1])-(pointWidth/2))+" "+(xTimeScale(d[0])-5)+","+(yScale(d[1])-tooltipTailHeight-1)+" "+(xTimeScale(d[0])+5)+","+(yScale(d[1])-tooltipTailHeight-1);
+            var tail = d3.select(this.parentNode.parentNode).selectAll("polygon[points='"+pts+"']");
+            if(tail.node()===null){return;}
+            var tt = d3.select(tail.node().parentNode);
+            var ttclass = tt.attr("class");
+            if(ttclass.includes("tooltip-locked")) {
+              tt.remove();
+            } else {
+              tt.attr("class", ttclass.replace("tooltip-unlocked", "tooltip-locked"));
+            }
           });
     }
     //legend box outline
@@ -229,13 +243,13 @@ $(document).ready(function(){
   }
 
   // var data = [ {name:"in-range-data", unit:"a", refMin:0, refMax:100, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15]]}];
-  var data = [{name:"test-data-0", unit:"aaaaaaaaaaaaaaaaaaaaaa", refMin:0, refMax:20, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]},
+  var data = [{name:"test-data-0", unit:"a", refMin:0, refMax:20, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]},
               {name:"test-data-1", unit:"b", refMin:20, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
-              {name:"test-data-3", unit:"cc", refMin:100, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
-              {name:"test-data-4", unit:"cc", refMin:500, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
-              {name:"test-data-5", unit:"bc", refMin:2, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
-              {name:"test-data-6", unit:"aaaaaa", refMin:10, refMax:20, values:[["10/11/16",15],["10/14/16",15],["10/18/16",20],["10/16/16",23]]},
-              {name:"test-data-7", unit:"lbs", refMin:30, refMax:50, values:[["10/11/16",30],["10/16/16",32]]}
+              {name:"test-data-2", unit:"cc", refMin:100, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
+              {name:"test-data-3", unit:"cc", refMin:500, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
+              {name:"test-data-4", unit:"bc", refMin:2, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
+              {name:"test-data-5", unit:"aaaaaaaaaaaaaaaa", refMin:10, refMax:20, values:[["10/11/16",15],["10/14/16",15],["10/18/16",20],["10/16/16",23]]},
+              {name:"test-data-6", unit:"lbs", refMin:30, refMax:50, values:[["10/11/16",30],["10/16/16",32]]}
             ];
   var body = d3.select("body");
   var svg = body.append("svg")
