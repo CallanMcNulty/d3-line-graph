@@ -129,7 +129,7 @@ $(document).ready(function(){
         .attr("x", labelX)
         .attr("y", h-padding)
         .text(dataSetName+" ("+dataSetUnit+")");
-      var textWidth = parseFloat(labelText.style("width"));
+      var textWidth = labelText.node().getComputedTextLength();
       legend.append("line")
         .attr("x1", labelX)
         .attr("x2", labelX + textWidth)
@@ -220,7 +220,7 @@ $(document).ready(function(){
             d3.selectAll(".value-tooltip").each(function(){
               var tt = d3.select(this);
               var tooltipLabel = tt.select("text");
-              var tooltipLabelWidth = parseFloat(tooltipLabel.style("width"));
+              var tooltipLabelWidth = tooltipLabel.node().getComputedTextLength();
               var rec = tt.select("rect")
                 .attr("width", Math.max(tooltipLabelWidth+(2*tooltipPadding), tooltipWidth/2+2*tooltipPadding) );
               var tooltipX = parseFloat(rec.attr("x"));
@@ -264,7 +264,7 @@ $(document).ready(function(){
       legend.selectAll("text").each(function(){
         var select = d3.select(this);
         var selectX = parseFloat(select.attr("x"));
-        var selectLength = parseFloat(select.style("width"));
+        var selectLength = select.node().getComputedTextLength();
         select.attr("textLength", selectLength*legendRatio);
         select.attr("lengthAdjust", "spacingAndGlyphs");
         select.attr("x", selectX*legendRatio+padding*(1-legendRatio));
@@ -288,12 +288,12 @@ $(document).ready(function(){
   }
 
   // var data = [ {name:"in-range-data", unit:"a", refMin:0, refMax:100, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15]]}];
-  var data = [{name:"test-data-0", unit:"a", refMin:0, refMax:20, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]},
-              {name:"test-data-1", unit:"b", refMin:20, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
-              {name:"test-data-2", unit:"cc", refMin:100, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
-              {name:"test-data-3", unit:"cc", refMin:500, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
-              {name:"test-data-4", unit:"bc", refMin:2, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
-              {name:"test-data-5", unit:"aaaaaaaaaaaaaaaa", refMin:10, refMax:20, values:[["10/11/16",15],["10/14/16",15],["10/18/16",20],["10/16/16",23]]},
+  var data = [{name:"test-data-0", unit:"lea", refMin:0, refMax:20, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]},
+              {name:"test-data-1", unit:"drachm", refMin:20, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
+              {name:"test-data-2", unit:"ftm", refMin:100, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
+              {name:"test-data-3", unit:"t", refMin:500, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
+              {name:"test-data-4", unit:"pt", refMin:2, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
+              {name:"test-data-5", unit:"fl oz", refMin:10, refMax:20, values:[["10/11/16",15],["10/14/16",15],["10/18/16",20],["10/16/16",23]]},
               {name:"test-data-6", unit:"lbs", refMin:30, refMax:50, values:[["10/11/16",30],["10/16/16",32]]}
             ];
   var body = d3.select("body");
