@@ -152,6 +152,7 @@ $(document).ready(function(){
       var tooltipTailHeight = 10;
       var tooltipPadding = 6;
       var trendLine = graph.append("g")
+        .attr("name", dataSetName)
         .attr("unit", dataSetUnit)
         .attr("refMin", datasetMin)
         .attr("refMax", datasetMax)
@@ -173,6 +174,8 @@ $(document).ready(function(){
           .attr("y", function(d) {return yScale(d[1])-(pointWidth/2)})
           .attr("class", "series"+Math.min(i,6)+"-point series-point")
           .on("mouseover", function(d) {
+            d3.select("."+d3.select(this.parentNode).attr("name"))
+              .attr("id", "highlighted");
             var tooltip = d3.select(this.parentNode.parentNode)
               .append("g")
                 .attr("class", "value-tooltip tooltip-unlocked");
@@ -242,6 +245,7 @@ $(document).ready(function(){
                 .selectAll(".tooltip-unlocked")
                 .remove();
             }
+            d3.select("#highlighted").attr("id", null);
           })
           .on("click", function(d){
             var pts = xTimeScale(d[0])+","+(yScale(d[1])-(pointWidth/2))+" "+(xTimeScale(d[0])-5)+","+(yScale(d[1])-tooltipTailHeight-1)+" "+(xTimeScale(d[0])+5)+","+(yScale(d[1])-tooltipTailHeight-1);
@@ -287,12 +291,72 @@ $(document).ready(function(){
     }
   }
 
+  var mean = function(dataset) {
+    var rt = 0; // running total
+    for (var i = 0; i < dataset.length; i++) {
+      rt += dataset[i];
+    }
+    return rt / dataset.length;
+  }
+
+  var variance = function(dataset) {
+    var dataMean = mean(dataset);
+    var rt = 0; // running total
+    var sq;
+
+    for(var i = 0; i < dataset.length; i++) {
+      sq = Math.pow(dataset[i] - dataMean, 2);
+      rt += sq;
+    }
+    return rt / dataset.length;
+  }
+
+  var stdDev = function(dataset) {
+  	return Math.sqrt(variance(dataset));
+  }
+
+  var getPlaces = function(num) {
+    var strNum = num.toString();
+    var dec = strNum.indexOf(".");
+    if(dec===-1) {
+      return 0;
+    } else {
+      return parseInt(strNum.length-dec-1);
+    }
+  }
+
+  var displayStats = function(table, data) {
+    var headings = table.append("tr");
+    headings.append("th").text("Dataset");
+    headings.append("th").text("Mean");
+    headings.append("th").text("Variance");
+    headings.append("th").text("Std. Deviation");
+    for(var i=0; i<data.length; i++) {
+      var workingSet = data[i].values;
+      var dataset = [];
+      var sigDig = Infinity;
+      for(var pt=0; pt<workingSet.length; pt++) {
+        var val = workingSet[pt][1];
+        dataset.push(val);
+        sigDig = Math.min(getPlaces(val),sigDig);
+      }
+      var datasetMean = mean(dataset).toFixed(sigDig);
+      var datasetVariance = variance(dataset).toFixed(sigDig);
+      var datasetStdDev = stdDev(dataset).toFixed(sigDig);
+      var setRow = table.append("tr").attr("class", data[i].name);
+      setRow.append("td").text(data[i].name + " ("+data[i].unit+")");
+      setRow.append("td").text(datasetMean);
+      setRow.append("td").text(datasetVariance);
+      setRow.append("td").text(datasetStdDev);
+    }
+  }
+
   // var data = [ {name:"in-range-data", unit:"a", refMin:0, refMax:100, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15]]}];
   var data = [{name:"test-data-0", unit:"lea", refMin:0, refMax:20, values:[["10/12/16",30],["10/11/16",23],["10/13/16",15],["10/14/16",15],["10/15/16",20],["10/16/16",23]]},
               {name:"test-data-1", unit:"drachm", refMin:20, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
               {name:"test-data-2", unit:"ftm", refMin:100, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
               {name:"test-data-3", unit:"t", refMin:500, refMax:800, values:[["10/13/16",500],["10/14/16",550],["10/18/16",600]]},
-              {name:"test-data-4", unit:"pt", refMin:2, refMax:40, values:[["10/13/16",2],["10/14/16",12],["10/15/16",27]]},
+              {name:"test-data-4", unit:"pt", refMin:2, refMax:40, values:[["10/13/16",2.01],["10/14/16",12.6],["10/15/16",27.15]]},
               {name:"test-data-5", unit:"fl oz", refMin:10, refMax:20, values:[["10/11/16",15],["10/14/16",15],["10/18/16",20],["10/16/16",23]]},
               {name:"test-data-6", unit:"lbs", refMin:30, refMax:50, values:[["10/11/16",30],["10/16/16",32]]}
             ];
@@ -300,7 +364,9 @@ $(document).ready(function(){
   var svg = body.append("svg")
     .style("width", "100%")
     .style("height", "80%")
+  var table = body.append("table")
   lineGraph(svg, data);
+  displayStats(table, data);
   $(window).resize(function(){
     svg.selectAll("*").remove();
     lineGraph(svg, data);
